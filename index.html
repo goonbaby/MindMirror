@@ -1,835 +1,800 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="th">
 <head>
-   <meta charset="UTF-8">
-   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-   <title>Mind Mirror - ค้นพบภาพสะท้อนในมุมที่คนอื่นเห็น</title>
-   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-   <style>
-       @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap');
-      
-       :root {
-           --safe-area-inset-top: env(safe-area-inset-top, 20px);
-           --safe-area-inset-right: env(safe-area-inset-right, 20px);
-           --safe-area-inset-bottom: env(safe-area-inset-bottom, 20px);
-           --safe-area-inset-left: env(safe-area-inset-left, 20px);
-           --color-gold: #D4AF37;
-           --color-gold-light: #FFD700;
-           --color-dark-bg: #0D0D0D;
-           --color-card-bg: rgba(20, 20, 20, 0.7);
-           --color-text: #EAEAEA;
-           --color-text-muted: rgba(234, 234, 234, 0.8);
-           --color-border: rgba(212, 175, 55, 0.2);
-       }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Mind Mirror - ค้นพบภาพสะท้อนในมุมที่คนอื่นเห็น</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap');
+        
+        :root {
+            --safe-area-inset-top: env(safe-area-inset-top, 20px);
+            --safe-area-inset-right: env(safe-area-inset-right, 20px);
+            --safe-area-inset-bottom: env(safe-area-inset-bottom, 20px);
+            --safe-area-inset-left: env(safe-area-inset-left, 20px);
+            --color-gold: #D4AF37;
+            --color-gold-light: #FFD700;
+            --color-dark-bg: #0D0D0D;
+            --color-card-bg: rgba(20, 20, 20, 0.7);
+            --color-text: #EAEAEA;
+            --color-text-muted: rgba(234, 234, 234, 0.8);
+            --color-border: rgba(212, 175, 55, 0.2);
+        }
 
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
-       *, *::before, *::after {
-           box-sizing: border-box;
-           margin: 0;
-           padding: 0;
-       }
+        html {
+            scroll-behavior: smooth;
+        }
 
+        body {
+            font-family: 'Kanit', sans-serif;
+            background-color: var(--color-dark-bg);
+            color: var(--color-text);
+            line-height: 1.7;
+            overflow-x: hidden;
+            background: radial-gradient(circle at 50% 50%, #1a1a1a, var(--color-dark-bg) 70%);
+        }
+        
+        .mysterious-particle-bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; overflow: hidden;
+        }
 
-       html {
-           scroll-behavior: smooth;
-       }
+        .mysterious-particle {
+            position: absolute; background-color: rgba(212, 175, 55, 0.1); border-radius: 50%;
+            animation: float 20s infinite ease-in-out; box-shadow: 0 0 15px rgba(212, 175, 55, 0.1);
+        }
 
+        @keyframes float {
+            0% { transform: translateY(0) translateX(0) scale(1); opacity: 0.1; }
+            50% { transform: translateY(-50px) translateX(20px) scale(1.2); opacity: 0.2; }
+            100% { transform: translateY(0) translateX(0) scale(1); opacity: 0.1; }
+        }
 
-       body {
-           font-family: 'Kanit', sans-serif;
-           background-color: var(--color-dark-bg);
-           color: var(--color-text);
-           line-height: 1.7;
-           overflow-x: hidden;
-           background: radial-gradient(circle at 50% 50%, #1a1a1a, var(--color-dark-bg) 70%);
-       }
-      
-       .mysterious-particle-bg {
-           position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; overflow: hidden;
-       }
+        .container {
+            max-width: 700px; margin: 0 auto;
+            padding: calc(var(--safe-area-inset-top) + 2rem) var(--safe-area-inset-right) calc(var(--safe-area-inset-bottom) + 2rem) var(--safe-area-inset-left);
+            min-height: 100vh; display: flex; flex-direction: column; justify-content: center;
+        }
+        
+        .main-card {
+            background: var(--color-card-bg); border: 1px solid var(--color-border); border-radius: 20px;
+            padding: clamp(1.5rem, 5vw, 2.5rem); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); position: relative; overflow: hidden; transition: all 0.3s ease;
+        }
 
+        .main-card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: linear-gradient(90deg, transparent, var(--color-gold), transparent);
+            animation: animate-border 4s linear infinite;
+        }
+        
+        @keyframes animate-border { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
 
-       .mysterious-particle {
-           position: absolute; background-color: rgba(212, 175, 55, 0.1); border-radius: 50%;
-           animation: float 20s infinite ease-in-out; box-shadow: 0 0 15px rgba(212, 175, 55, 0.1);
-       }
+        .hidden { display: none !important; }
+        
+        h1, h2, h3, h4 { text-wrap: balance; }
 
+        /* --- Sections --- */
+        #intro-section, #quiz-section, #results-section { animation: fadeIn 0.8s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
-       @keyframes float {
-           0% { transform: translateY(0) translateX(0) scale(1); opacity: 0.1; }
-           50% { transform: translateY(-50px) translateX(20px) scale(1.2); opacity: 0.2; }
-           100% { transform: translateY(0) translateX(0) scale(1); opacity: 0.1; }
-       }
+        /* Intro Section */
+        #intro-section { text-align: center; }
+        #intro-section h4 {
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: var(--color-text);
+            margin-bottom: 0.5rem;
+        }
+        #intro-section h1 {
+            font-size: clamp(2.2rem, 7vw, 3.5rem); font-weight: 700; margin-bottom: 1rem;
+            background: linear-gradient(45deg, var(--color-gold-light), var(--color-gold));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        #intro-section h2 {
+            font-size: clamp(1rem, 3vw, 1.2rem); font-weight: 300; color: var(--color-text-muted);
+            margin-bottom: 2.5rem; max-width: 500px; margin-left: auto; margin-right: auto;
+        }
+        
+        /* Buttons */
+        .btn {
+            font-family: 'Kanit', sans-serif; border: none; border-radius: 50px; padding: 1rem 2.5rem;
+            font-size: 1rem; font-weight: 500; cursor: pointer; transition: all 0.3s ease;
+            text-decoration: none; display: inline-block;
+        }
+        .btn-primary-pro {
+            background: linear-gradient(45deg, var(--color-gold), var(--color-gold-light));
+            color: #111; box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+        }
+        .btn-primary-pro:hover { transform: translateY(-3px) scale(1.05); box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4); }
+        .btn-secondary { background-color: rgba(255, 255, 255, 0.1); color: var(--color-text); }
+        .btn-secondary:hover { background-color: rgba(255, 255, 255, 0.2); }
 
+        /* Quiz Section */
+        .progress-bar-container { margin-bottom: 1.5rem; }
+        .progress-bar { width: 100%; background-color: rgba(255, 255, 255, 0.1); border-radius: 10px; overflow: hidden; }
+        #progress-bar-fill {
+            height: 10px; width: 0%; background: linear-gradient(90deg, var(--color-gold), var(--color-gold-light));
+            border-radius: 10px; transition: width 0.4s ease-out;
+        }
+        #progress-text { text-align: center; margin-top: 0.5rem; font-size: 0.9rem; color: var(--color-text-muted); }
 
-       .container {
-           max-width: 700px; margin: 0 auto;
-           padding: calc(var(--safe-area-inset-top) + 2rem) var(--safe-area-inset-right) calc(var(--safe-area-inset-bottom) + 2rem) var(--safe-area-inset-left);
-           min-height: 100vh; display: flex; flex-direction: column; justify-content: center;
-       }
-      
-       .main-card {
-           background: var(--color-card-bg); border: 1px solid var(--color-border); border-radius: 20px;
-           padding: clamp(1.5rem, 5vw, 2.5rem); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
-           box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); position: relative; overflow: hidden; transition: all 0.3s ease;
-       }
+        #question-text { font-size: clamp(1.2rem, 4vw, 1.5rem); font-weight: 500; margin-bottom: 2rem; text-align: center; }
+        .answers-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+        .answer-option {
+            background: rgba(255, 255, 255, 0.05); border: 1px solid var(--color-border); border-radius: 12px;
+            padding: 1rem; cursor: pointer; transition: all 0.2s ease; text-align: left; color: var(--color-text);
+            font-family: 'Kanit', sans-serif; font-size: 1rem; width: 100%;
+        }
+        .answer-option:hover { background: rgba(255, 255, 255, 0.1); border-color: var(--color-gold); }
+        .answer-option.selected {
+            background: rgba(212, 175, 55, 0.2); border-color: var(--color-gold);
+            transform: scale(1.03); box-shadow: 0 0 15px rgba(212, 175, 55, 0.2);
+        }
+        .quiz-navigation { display: flex; justify-content: space-between; margin-top: 2rem; }
+        #nextBtn:disabled { opacity: 0.5; cursor: not-allowed; }
 
+        /* Results Section */
+        .archetype-card {
+            background: rgba(255, 255, 255, 0.03); border: 1px solid var(--color-border); border-radius: 15px;
+            padding: 1.5rem; margin-bottom: 1.5rem; /* Reduced margin */
+        }
+        .archetype-card.top-archetype { border-width: 2px; border-color: var(--color-gold); }
+        .archetype-title { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+        .archetype-icon { font-size: 2rem; }
+        .archetype-name { font-size: 1.5rem; font-weight: 600; }
+        .archetype-desc { color: var(--color-text-muted); margin-bottom: 1rem; }
+        .archetype-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
+        .chip { background: rgba(212, 175, 55, 0.1); color: var(--color-gold); padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem; }
+        .trigger-text { font-style: italic; font-size: 0.9rem; color: rgba(234, 234, 234, 0.6); }
 
-       .main-card::before {
-           content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
-           background: linear-gradient(90deg, transparent, var(--color-gold), transparent);
-           animation: animate-border 4s linear infinite;
-       }
-      
-       @keyframes animate-border { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+        .section-headline { font-size: 1.3rem; font-weight: 600; text-align: center; margin: 2.5rem 0 1.5rem; }
+        
+        .accordion-item {
+            background: rgba(255, 255, 255, 0.03); border: 1px solid var(--color-border); border-radius: 12px; margin-bottom: 1rem;
+        }
+        .accordion-header {
+            width: 100%; background: none; border: none; color: var(--color-text); font-family: 'Kanit', sans-serif;
+            font-size: 1.1rem; font-weight: 500; padding: 1rem 1.5rem; text-align: left;
+            cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+        }
+        .accordion-header::after { content: '+'; font-size: 1.5rem; transition: transform 0.3s ease; }
+        .accordion-item.active .accordion-header::after { transform: rotate(45deg); }
+        .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
+        .accordion-content-inner { padding: 0 1.5rem 1.5rem; }
+        .accordion-content-inner ul { list-style: none; padding-left: 0; }
+        .accordion-content-inner li { margin-bottom: 0.5rem; display: flex; align-items: flex-start; }
+        .accordion-content-inner li::before { content: '›'; color: var(--color-gold); margin-right: 0.75rem; font-weight: 700; }
+        .accordion-content-inner li p {
+            margin: 0;
+            line-height: 1.6;
+        }
+        .accordion-content-inner li p + p {
+            margin-top: 0.75rem;
+        }
+        
+        #chart-container { padding: 1rem; }
+        
+        .cta-section {
+            background: rgba(212, 175, 55, 0.05); border: 1px solid rgba(212, 175, 55, 0.1);
+            border-radius: 15px; padding: 2rem; text-align: center; margin-top: 2rem;
+        }
+        .cta-section h3 {
+            font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem;
+            background: linear-gradient(45deg, var(--color-gold-light), var(--color-gold));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .cta-section ul { list-style: none; padding: 0; margin: 1.5rem 0 0.5rem; display: inline-block; text-align: left; }
+        .cta-section li { margin-bottom: 0.5rem; }
+        
+        #retakeBtn { margin-top: 1.5rem; text-align: center; }
 
+        .final-cta-btn {
+            padding-left: 3rem;
+            padding-right: 3rem;
+            margin-top: 1rem;
+        }
 
-       .hidden { display: none !important; }
-      
-       h1, h2, h3, h4 { text-wrap: balance; }
+        @media (min-width: 600px) {
+            .answers-grid { grid-template-columns: repeat(2, 1fr); }
+        }
 
-
-       /* --- Sections --- */
-       #intro-section, #quiz-section, #results-section { animation: fadeIn 0.8s ease-out; }
-       @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-
-
-       /* Intro Section */
-       #intro-section { text-align: center; }
-       #intro-section h4 {
-           font-size: 1.2rem;
-           font-weight: 500;
-           color: var(--color-text);
-           margin-bottom: 0.5rem;
-       }
-       #intro-section h1 {
-           font-size: clamp(2.2rem, 7vw, 3.5rem); font-weight: 700; margin-bottom: 1rem;
-           background: linear-gradient(45deg, var(--color-gold-light), var(--color-gold));
-           -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-       }
-       #intro-section h2 {
-           font-size: clamp(1rem, 3vw, 1.2rem); font-weight: 300; color: var(--color-text-muted);
-           margin-bottom: 2.5rem; max-width: 500px; margin-left: auto; margin-right: auto;
-       }
-      
-       /* Buttons */
-       .btn {
-           font-family: 'Kanit', sans-serif; border: none; border-radius: 50px; padding: 1rem 2.5rem;
-           font-size: 1rem; font-weight: 500; cursor: pointer; transition: all 0.3s ease;
-           text-decoration: none; display: inline-block;
-       }
-       .btn-primary-pro {
-           background: linear-gradient(45deg, var(--color-gold), var(--color-gold-light));
-           color: #111; box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
-       }
-       .btn-primary-pro:hover { transform: translateY(-3px) scale(1.05); box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4); }
-       .btn-secondary { background-color: rgba(255, 255, 255, 0.1); color: var(--color-text); }
-       .btn-secondary:hover { background-color: rgba(255, 255, 255, 0.2); }
-
-
-       /* Quiz Section */
-       .progress-bar-container { margin-bottom: 1.5rem; }
-       .progress-bar { width: 100%; background-color: rgba(255, 255, 255, 0.1); border-radius: 10px; overflow: hidden; }
-       #progress-bar-fill {
-           height: 10px; width: 0%; background: linear-gradient(90deg, var(--color-gold), var(--color-gold-light));
-           border-radius: 10px; transition: width 0.4s ease-out;
-       }
-       #progress-text { text-align: center; margin-top: 0.5rem; font-size: 0.9rem; color: var(--color-text-muted); }
-
-
-       #question-text { font-size: clamp(1.2rem, 4vw, 1.5rem); font-weight: 500; margin-bottom: 2rem; text-align: center; }
-       .answers-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
-       .answer-option {
-           background: rgba(255, 255, 255, 0.05); border: 1px solid var(--color-border); border-radius: 12px;
-           padding: 1rem; cursor: pointer; transition: all 0.2s ease; text-align: left; color: var(--color-text);
-           font-family: 'Kanit', sans-serif; font-size: 1rem; width: 100%;
-       }
-       .answer-option:hover { background: rgba(255, 255, 255, 0.1); border-color: var(--color-gold); }
-       .answer-option.selected {
-           background: rgba(212, 175, 55, 0.2); border-color: var(--color-gold);
-           transform: scale(1.03); box-shadow: 0 0 15px rgba(212, 175, 55, 0.2);
-       }
-       .quiz-navigation { display: flex; justify-content: space-between; margin-top: 2rem; }
-       #nextBtn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-
-       /* Results Section */
-       .archetype-card {
-           background: rgba(255, 255, 255, 0.03); border: 1px solid var(--color-border); border-radius: 15px;
-           padding: 1.5rem; margin-bottom: 1.5rem; /* Reduced margin */
-       }
-       .archetype-card.top-archetype { border-width: 2px; border-color: var(--color-gold); }
-       .archetype-title { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
-       .archetype-icon { font-size: 2rem; }
-       .archetype-name { font-size: 1.5rem; font-weight: 600; }
-       .archetype-desc { color: var(--color-text-muted); margin-bottom: 1rem; }
-       .archetype-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
-       .chip { background: rgba(212, 175, 55, 0.1); color: var(--color-gold); padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem; }
-       .trigger-text { font-style: italic; font-size: 0.9rem; color: rgba(234, 234, 234, 0.6); }
-
-
-       .section-headline { font-size: 1.3rem; font-weight: 600; text-align: center; margin: 2.5rem 0 1.5rem; }
-      
-       .accordion-item {
-           background: rgba(255, 255, 255, 0.03); border: 1px solid var(--color-border); border-radius: 12px; margin-bottom: 1rem;
-       }
-       .accordion-header {
-           width: 100%; background: none; border: none; color: var(--color-text); font-family: 'Kanit', sans-serif;
-           font-size: 1.1rem; font-weight: 500; padding: 1rem 1.5rem; text-align: left;
-           cursor: pointer; display: flex; justify-content: space-between; align-items: center;
-       }
-       .accordion-header::after { content: '+'; font-size: 1.5rem; transition: transform 0.3s ease; }
-       .accordion-item.active .accordion-header::after { transform: rotate(45deg); }
-       .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
-       .accordion-content-inner { padding: 0 1.5rem 1.5rem; }
-       .accordion-content-inner ul { list-style: none; padding-left: 0; }
-       .accordion-content-inner li { margin-bottom: 0.5rem; display: flex; align-items: flex-start; }
-       .accordion-content-inner li::before { content: '›'; color: var(--color-gold); margin-right: 0.75rem; font-weight: 700; }
-      
-       #chart-container { padding: 1rem; }
-      
-       .cta-section {
-           background: rgba(212, 175, 55, 0.05); border: 1px solid rgba(212, 175, 55, 0.1);
-           border-radius: 15px; padding: 2rem; text-align: center; margin-top: 2rem;
-       }
-       .cta-section h3 {
-           font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem;
-           background: linear-gradient(45deg, var(--color-gold-light), var(--color-gold));
-           -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-       }
-       .cta-section ul { list-style: none; padding: 0; margin: 1.5rem 0; display: inline-block; text-align: left; }
-       .cta-section li { margin-bottom: 0.5rem; }
-      
-       #retakeBtn { margin-top: 1.5rem; text-align: center; }
-
-
-       .final-cta-btn {
-           padding-left: 3rem;
-           padding-right: 3rem;
-           margin-top: 1.5rem;
-       }
-
-
-       @media (min-width: 600px) {
-           .answers-grid { grid-template-columns: repeat(2, 1fr); }
-       }
-
-
-   </style>
+    </style>
 </head>
 <body>
-   <div class="mysterious-particle-bg" id="bgMystery"></div>
-   <div class="container">
-       <div class="main-card">
-           <!-- Section 1: Introduction -->
-           <section id="intro-section">
-               <h4>MindMirror</h4>
-               <h1>ภาพที่คุณฉาย…<br>
-                   กับภาพที่ใคร ๆ เห็น<br>
-                   ตรงกันจริงหรือ?</h1>
-               <h2>Mind Mirror เครื่องมือสะท้อนภาพจำ<br>ที่คนมีต่อคุณ พร้อมทางรับมือทันที</h2>
-               <button id="startTestBtn" class="btn btn-primary-pro">ใช้งานเครื่องมือ</button>
-           </section>
-          
-           <!-- Section 2: Quiz -->
-           <section id="quiz-section" class="hidden">
-               <div class="progress-bar-container">
-                   <div id="progress-text"></div>
-                   <div class="progress-bar">
-                       <div id="progress-bar-fill"></div>
-                   </div>
-               </div>
-               <h3 id="question-text"></h3>
-               <div class="answers-grid" id="answers-container"></div>
-               <div class="quiz-navigation">
-                   <button id="prevBtn" class="btn btn-secondary">ย้อนกลับ</button>
-                   <button id="nextBtn" class="btn btn-primary-pro" disabled>ต่อไป</button>
-               </div>
-           </section>
+    <div class="mysterious-particle-bg" id="bgMystery"></div>
+    <div class="container">
+        <div class="main-card">
+            <!-- Section 1: Introduction -->
+            <section id="intro-section">
+                <h4>MindMirror</h4>
+                <h1>ภาพที่คุณฉาย…<br>
+                    กับภาพที่ใคร ๆ เห็น<br> 
+                    ตรงกันจริงหรือ?</h1>
+                <h2>Mind Mirror เครื่องมือสะท้อนภาพจำ<br>ที่คนมีต่อคุณ พร้อมทางรับมือทันที</h2>
+                <button id="startTestBtn" class="btn btn-primary-pro">ใช้งานเครื่องมือ</button>
+            </section>
+            
+            <!-- Section 2: Quiz -->
+            <section id="quiz-section" class="hidden">
+                <div class="progress-bar-container">
+                    <div id="progress-text"></div>
+                    <div class="progress-bar">
+                        <div id="progress-bar-fill"></div>
+                    </div>
+                </div>
+                <h3 id="question-text"></h3>
+                <div class="answers-grid" id="answers-container"></div>
+                <div class="quiz-navigation">
+                    <button id="prevBtn" class="btn btn-secondary">ย้อนกลับ</button>
+                    <button id="nextBtn" class="btn btn-primary-pro" disabled>ต่อไป</button>
+                </div>
+            </section>
 
+            <!-- Section 3: Results (NEW STRUCTURE) -->
+            <section id="results-section" class="hidden">
+                <!-- Part 1: Top Archetype Details -->
+                <div class="section-headline">ภาพสะท้อนหลักของคุณ</div>
+                <div id="top-archetype-full-container">
+                    <!-- JS will inject card and accordions here -->
+                </div>
 
-           <!-- Section 3: Results (NEW STRUCTURE) -->
-           <section id="results-section" class="hidden">
-               <!-- Part 1: Top Archetype Details -->
-               <div class="section-headline">ภาพสะท้อนหลักของคุณ</div>
-               <div id="top-archetype-full-container">
-                   <!-- JS will inject card and accordions here -->
-               </div>
+                <!-- Part 2: Runner-up Archetype Details -->
+                <div class="section-headline">ภาพสะท้อนรอง</div>
+                <div id="runner-up-archetype-full-container">
+                    <!-- JS will inject card and accordions here -->
+                </div>
 
+                <!-- Part 3: Summary & Next Steps -->
+                <div class="section-headline">สรุปดัชนีการตระหนักรู้</div>
+                <div id="chart-container">
+                    <canvas id="awarenessChart"></canvas>
+                </div>
 
-               <!-- Part 2: Runner-up Archetype Details -->
-               <div class="section-headline">ภาพสะท้อนรอง</div>
-               <div id="runner-up-archetype-full-container">
-                   <!-- JS will inject card and accordions here -->
-               </div>
+                <div class="cta-section">
+                    <h3>สิ่งที่คุณเห็นใน Mind Mirror คือแค่เงาสะท้อนแรก</h3>
+                    <p>ถ้าอยากรู้จักตัวเองลึกจริง → ลอง Deep Psychology Test Pro</p>
+                    <p style="margin-top: 1rem;">เจาะลึก 8 มิติชีวิต พร้อมคู่มือที่ใช้ได้จริง</p>
+                    <ul>
+                        <li>🧬 DNA บุคลิกภาพ</li>
+                        <li>⭐ จุดแข็ง & ⚠️ จุดอ่อน</li>
+                        <li>💼 งานที่เหมาะกับคุณ</li>
+                        <li>💕 ความรักและความสัมพันธ์</li>
+                        <li>🚀 แผนพัฒนาตัวเองเจาะจง</li>
+                        <li>💎 ข้อความลับเฉพาะคุณ</li>
+                    </ul>
+                    <a href="https://ddtpro.framer.website/" target="_blank" class="btn btn-primary-pro final-cta-btn">🔮 คลิกดูรายละเอียดเลย</a>
+                </div>
+                
+                <div id="retakeBtn">
+                    <button class="btn btn-secondary">ทำแบบทดสอบอีกครั้ง</button>
+                </div>
 
+            </section>
+        </div>
+    </div>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
 
-               <!-- Part 3: Summary & Next Steps -->
-               <div class="section-headline">สรุปดัชนีการตระหนักรู้</div>
-               <div id="chart-container">
-                   <canvas id="awarenessChart"></canvas>
-               </div>
+        // --- DATA ---
+        const archetypes = {
+            WG: {
+                name: "Warmth Gap",
+                tagline: "ดูเย็นชา/ห่างเหิน",
+                icon: "❄️",
+                desc: "คุณเก่งด้านเหตุผลและเนื้อหา แต่โทนการสื่อสารอาจทำให้คนรู้สึกว่าคุณไม่เป็นมิตร ทั้งที่จริงคุณใส่ใจมาก เพียงแต่ไม่ถนัดการแสดงออก",
+                chips: ["#นิ่งจริงจัง", "#ไม่ค่อยแสดงอารมณ์", "#ดูเหมือนไม่แคร์"],
+                trigger: "มักโผล่เมื่อคุณโฟกัสงานหรือเหนื่อยล้า",
+                why: "<p><strong>Warmth–Competence Model</strong></p><p>ที่อธิบายว่าเวลาคนประเมินใคร เขาจะดูว่า “อบอุ่นไหม” ก่อนจะดูว่า “เก่งไหม” คุณที่โฟกัสเนื้อหาเลยถูกมองว่าไม่ใส่ใจ ทั้งที่จริงคุณแค่ไม่ถนัดแสดงออก</p>",
+                audit: [
+                    "ใช่ครับ/ค่ะ ผมอาจดูนิ่งไปหน่อย … แต่จริง ๆ แล้วผมใส่ใจคุณมาก เพียงแค่ไม่ค่อยพูด",
+                    "จริงครับ/ค่ะ บางทีผมโฟกัสที่งานจนลืมแสดงอารมณ์ … ผมจะพยายามปรับให้มากขึ้น",
+                    "ใช่เลย ผมไม่ค่อยพูดหวาน ๆ … แต่ผมอยากให้คุณรู้ว่าผมแสดงออกผ่านการกระทำ"
+                ],
+                playbook: [
+                    "สบตากับคู่สนทนา 2–3 วิก่อนพูด",
+                    "พยักหน้าหรือยิ้มเล็กน้อยเวลาฟัง",
+                    "ส่งข้อความสั้น ๆ หลังเจอกัน (“ถึงบ้านปลอดภัยนะ”)",
+                    "ใช้คำพูดง่าย ๆ ที่สื่อความเข้าใจ เช่น “ฉันเข้าใจนะที่คุณรู้สึกแบบนี้”",
+                    "เพิ่มท่าทางกาย เช่น ก้มศีรษะเล็กน้อยแทนการนิ่งเฉย"
+                ]
+            },
+            BB: {
+                name: "Boundary Blur",
+                tagline: "ไม่เคารพเวลา/ขอบเขต",
+                icon: "⏳",
+                desc: "คุณเป็นคนให้ใจ แต่บางครั้งเลยก้าวล้ำ เช่น ทักหาคนตอนดึก หรือคาดหวังคำตอบเร็ว ทั้งที่อีกฝ่ายอาจไม่สะดวก",
+                chips: ["#ไม่ให้พื้นที่", "#ทักไม่ดูเวลา", "#ไม่เกรงใจ"],
+                trigger: "มักโผล่เมื่อคุณกังวลหรือใจร้อนอยากเคลียร์ทันที",
+                why: "<p><strong>Boundary Theory</strong></p><p>ที่อธิบายว่าทุกคนมีเส้นแบ่ง “เวลาส่วนตัว” กับ “เวลาสังคม/งาน” ที่ต่างกัน เมื่อคุณใจร้อนทักหานอกเวลา จึงถูกมองว่ารุกล้ำพื้นที่ส่วนตัว</p>",
+                audit: [
+                    "จริงครับ/ค่ะ ผมอาจทักตอนที่คุณไม่สะดวก … ต่อไปผมจะถามก่อนว่าคุยได้ไหม",
+                    "ใช่ครับ/ค่ะ ผมบางทีใจร้อน อยากคุยทันที … แต่ผมรู้แล้วว่าทุกคนต้องมีเวลาของตัวเอง",
+                    "ถูกต้องเลย ผมอาจไม่ทันคิด … ครั้งหน้าขอเราตั้งเวลาที่เหมาะสมร่วมกัน"
+                ],
+                playbook: [
+                    "ระบุเวลาทำงาน/พักให้ชัด เช่น “สะดวกคุย 10.00–20.00”",
+                    "ก่อนทักถามว่า “ตอนนี้สะดวกคุยไหมครับ/คะ?”",
+                    "งดส่งข้อความเกิน 3 ทุ่ม",
+                    "ถ้าอีกฝ่ายไม่ตอบทันที อย่าทวงซ้ำ",
+                    "ฝึกเว้นช่วงเวลาในการตอบบ้าง ไม่ต้องรีบเสมอไป"
+                ]
+            },
+            CR: {
+                name: "Consistency Risk",
+                tagline: "ไม่นิ่ง/เปลี่ยนใจง่าย",
+                icon: "🌪️",
+                desc: "คุณชอบลองสิ่งใหม่ ไม่กลัวเปลี่ยนเส้นทาง และยืดหยุ่นกับสถานการณ์ แต่บางครั้งคนอื่นอาจรู้สึกว่าคุณไม่น่าเชื่อถือ เพราะเปลี่ยนความคิดหรือการตัดสินใจบ่อยเกินไป",
+                chips: ["#เอาแน่ไม่ได้", "#พูดไม่เหมือนเดิม", "#เปลี่ยนตลอด"],
+                trigger: "มักโผล่เมื่อเจอข้อมูลใหม่หรือสถานการณ์ไม่คาดคิด",
+                why: "<p><strong>Consistency Principle</strong></p><p>ที่อธิบายว่าคนเรามักให้ค่ากับความ “คงเส้นคงวา” มากกว่าความเปลี่ยนแปลง แม้ความยืดหยุ่นของคุณจะมีเหตุผล แต่ก็อาจถูกมองว่าไม่น่าเชื่อถือ</p>",
+                audit: [
+                    "จริงครับ/ค่ะ ผมเปลี่ยนบ่อยเพราะกำลังหาทางที่ดีที่สุด … ไม่ใช่ว่าไม่มีเหตุผล",
+                    "ใช่ครับ/ค่ะ ผมยังทดลองอยู่ … แต่ทุกการเปลี่ยนมีการบันทึกและเหตุผลชัดเจน",
+                    "ถูกเลย ผมอาจดูไม่นิ่ง … แต่ผมคิดว่าความยืดหยุ่นช่วยให้หาทางออกใหม่ ๆ ได้เสมอ"
+                ],
+                playbook: [
+                    "เขียนบันทึกเหตุผลของแต่ละการตัดสินใจ",
+                    "เมื่อเปลี่ยน ให้บอกสั้น ๆ ว่า “ผมเปลี่ยนเพราะ…”",
+                    "ใช้คำว่า “กำลังลอง” แทนการบอกว่า “ตัดสินใจแล้ว”",
+                    "ตั้งกรอบเวลาให้ตัวเอง เช่น “จะตัดสินใจภายใน 2 สัปดาห์”",
+                    "แจ้งคนรอบตัวว่าตอนนี้คุณอยู่ใน “ช่วงทดลอง”"
+                ]
+            },
+            CD: {
+                name: "Clarity Deficit",
+                tagline: "พูดไม่ชัด/วกวน",
+                icon: "💬",
+                desc: "คุณรู้เยอะและมีข้อมูลมาก แต่เวลาอธิบายอาจเล่ายืดยาวจนคนฟังหลงทาง ทำให้ความเก่งของคุณไม่ถูกสื่อออกไปเต็มที่",
+                chips: ["#วกวน", "#สรุปไม่เป็น", "#จับใจความยาก"],
+                trigger: "มักโผล่เมื่อคุณพยายามอธิบายเรื่องที่ซับซ้อน",
+                why: "<p><strong>Processing Fluency</strong></p><p>ที่อธิบายว่า “สิ่งที่เข้าใจง่าย = น่าเชื่อถือกว่า” เมื่อคุณอธิบายซับซ้อนเกินไป คนฟังจะใช้พลังงานเยอะและอาจสรุปว่าสิ่งที่คุณพูดไม่น่าเชื่อถือ</p>",
+                audit: [
+                    "จริงครับ/ค่ะ ผมบางทีพูดรายละเอียดเยอะเกิน … ขออนุญาตสรุปสั้น ๆ",
+                    "ใช่ครับ/ค่ะ ผมอาจเล่าไม่เป็นระเบียบ … งั้นผมเรียงใหม่เป็นข้อ ๆ ให้เลยนะ",
+                    "ถูกครับ/ค่ะ ผมอาจไม่ชัดเจน … ต่อไปจะเริ่มจากสรุปก่อน"
+                ],
+                playbook: [
+                    "ใช้กฎ “พูด 3 ข้อหลัก”",
+                    "เวลาพิมพ์ ให้สรุปใจความ 2–3 ประโยคท้าย",
+                    "ฝึกเล่าเรื่องให้เด็กฟัง เพื่อปรับให้ง่ายขึ้น",
+                    "พูดให้สั้นลงกว่าที่คิด 30%",
+                    "เริ่มต้นด้วย “ประเด็นหลักมี 2 เรื่อง…”"
+                ]
+            },
+            OC: {
+                name: "Overcontrol",
+                tagline: "ชอบบงการ/เถียงเก่ง",
+                icon: "🕹️",
+                desc: "คุณมั่นใจในความคิดและอยากให้งานออกมาดีที่สุด จึงชอบควบคุมหรือยืนยันในสิ่งที่คิด แต่บางครั้งสิ่งนี้ทำให้คนอื่นรู้สึกเหมือนคุณไม่เปิดโอกาสให้เลือก",
+                chips: ["#ชอบบังคับ", "#ไม่ฟังใคร", "#เอาแต่ใจ"],
+                trigger: "มักโผล่เมื่อคุณเชื่อมั่นในความคิดของตัวเองมาก ๆ",
+                why: "<p><strong>Reactance Theory</strong></p><p>ที่อธิบายว่าเมื่อคนรู้สึกถูกบังคับหรือจำกัดอิสรภาพ เขามักจะต่อต้านทันที แม้ว่าสิ่งที่คุณเสนอนั้นจะดีที่สุดก็ตาม</p>",
+                audit: [
+                    "จริงครับ/ค่ะ ผมอาจกดดันไปหน่อย … ต่อไปจะเปิดให้คุณเลือกมากขึ้น",
+                    "ใช่ครับ/ค่ะ ผมเถียงบ่อยเพราะอยากหาคำตอบที่ดีที่สุด … แต่ผมเข้าใจว่ามันทำให้คุณอึดอัด",
+                    "ถูกเลย ผมอาจผลักแรงไป … ครั้งนี้อยากให้คุณตัดสินใจ แล้วผมจะสนับสนุน"
+                ],
+                playbook: [
+                    "ใช้คำว่า “คุณอยาก…” แทน “คุณต้อง…”",
+                    "เสนอทางเลือก 2–3 แบบแทนการบอกตรง ๆ",
+                    "ฟังให้จบก่อนตอบ",
+                    "ชื่นชมไอเดียคนอื่นก่อนเสนอของตัวเอง",
+                    "ถามว่า “คุณคิดยังไง” ก่อนสรุป"
+                ]
+            },
+            CA: {
+                name: "Conflict Avoider",
+                tagline: "เลี่ยงความขัดแย้ง",
+                icon: "🕊️",
+                desc: "คุณรักความสงบ ไม่อยากมีปัญหากับใคร เวลามีเรื่องขัดแย้งมักเลือกเงียบหรือถอย แต่ผลคือปัญหาที่ควรแก้กลับถูกดองจนกลายเป็นเรื่องใหญ่",
+                chips: ["#ไม่พูดตรงๆ", "#หนีปัญหา", "#ไม่เคลียร์"],
+                trigger: "มักโผล่เมื่อสถานการณ์เริ่มตึงเครียด",
+                why: "<p><strong>Conflict Management Styles</strong></p><p>ที่อธิบายว่ารูปแบบการจัดการความขัดแย้งของคุณคือ “การเลี่ยง” ซึ่งมีประโยชน์ในการลดความตึงเครียดระยะสั้น แต่ทำให้ปัญหาระยะยาวยังคงอยู่</p>",
+                audit: [
+                    "จริงครับ/ค่ะ ผมไม่ชอบการทะเลาะ … แต่บางเรื่องควรพูดให้ชัดเจน",
+                    "ใช่ครับ/ค่ะ ผมมักเลี่ยงเพราะอยากรักษาความสัมพันธ์ … แต่ผมจะลองคุยตรง ๆ แบบใจเย็น",
+                    "ถูกเลย ผมอาจเก็บไว้ในใจมากเกินไป … ครั้งนี้ผมอยากอธิบายความรู้สึกให้คุณเข้าใจ"
+                ],
+                playbook: [
+                    "ใช้ประโยคเริ่มด้วย “ผมรู้สึกว่า…”",
+                    "เลือกคุยตอนที่อารมณ์เย็น",
+                    "เขียนประเด็นไว้ก่อนแล้วค่อยพูด",
+                    "เริ่มด้วยเรื่องเล็ก ๆ เช่น “ฉันไม่ชอบเวลา…”",
+                    "ซ้อมพูดกับเพื่อน/ในกระจกก่อนคุยจริง"
+                ]
+            },
+            AS: {
+                name: "Approval-Seeker",
+                tagline: "อยากให้ทุกคนพอใจ",
+                icon: "❤️‍🩹",
+                desc: "คุณอยากทำให้ทุกคนชอบและไม่ผิดหวัง เลยมักจะตอบรับทุกคำขอ แต่ผลคือบางครั้งคุณเหนื่อยเกินไป และคนอื่นไม่รู้ว่าคุณคิดอะไรจริง ๆ",
+                chips: ["#ไม่จริงใจ", "#ไม่กล้าปฏิเสธ", "#ไม่มีความคิดตัวเอง"],
+                trigger: "มักโผล่เมื่อต้องตัดสินใจที่อาจมีคนไม่เห็นด้วย",
+                why: "<p><strong>Need for Approval</strong></p><p>ที่อธิบายว่าคือความต้องการการยอมรับจากคนรอบตัว ซึ่งเป็นเรื่องปกติ แต่หากมากเกินไปจะทำให้คุณสูญเสียความเป็นตัวเองและพลังงานไป</p>",
+                audit: [
+                    "จริงครับ/ค่ะ ผมอยากให้ทุกคนสบายใจ … แต่บางทีก็ลืมดูแลตัวเอง",
+                    "ใช่ครับ/ค่ะ ผมพยายามทำให้ทุกฝ่ายพอใจ … แต่รู้แล้วว่ามันทำไม่ได้เสมอไป",
+                    "ถูกเลย ผมไม่ค่อยกล้าปฏิเสธ … แต่ผมกำลังฝึกบาลานซ์มากขึ้น"
+                ],
+                playbook: [
+                    "ตอบว่า “ขอคิดดูก่อน” แทนการตอบทันที",
+                    "เขียนลิสต์ว่าอะไรบ้างที่ “ไม่อยากทำ”",
+                    "เลือกช่วยเฉพาะเรื่องที่ไม่ทำให้คุณเหนื่อยเกินไป",
+                    "ฝึกปฏิเสธด้วยคำสุภาพ เช่น “ตอนนี้ยังไม่สะดวก”",
+                    "ให้รางวัลตัวเองเมื่อกล้าปฏิเสธครั้งแรก ๆ"
+                ]
+            },
+            PF: {
+                name: "Perfectionist",
+                tagline: "เป๊ะเกินไป/จุกจิก",
+                icon: "🎯",
+                desc: "คุณใส่ใจรายละเอียดและอยากให้งานออกมาดีที่สุด แต่บางครั้งความเป๊ะเกินไปทำให้เสียเวลา ทำให้งานเสร็จช้า และทำให้คนอื่นรู้สึกว่าคุณเข้มงวดเกินไป",
+                chips: ["#จุกจิก", "#ไม่เสร็จซักที", "#ซีเรียสเกิน"],
+                trigger: "มักโผล่เมื่อคุณทำงานที่สำคัญกับตัวเองมาก ๆ",
+                why: "<p><strong>Perfectionism</strong></p><p>ที่อธิบายว่าคือความเชื่อว่าต้องทำให้สมบูรณ์แบบตลอดเวลา ซึ่งอาจนำไปสู่การผัดวันประกันพรุ่ง (เพราะกลัวไม่ดีพอ) และสร้างความเครียดโดยไม่จำเป็น</p>",
+                audit: [
+                    "จริงครับ/ค่ะ ผมชอบเก็บรายละเอียดเยอะ … แต่บางครั้งก็ทำให้ช้าเกินไป",
+                    "ใช่ครับ/ค่ะ ผมอาจดูจุกจิก … เพราะอยากให้งานออกมาดีที่สุด",
+                    "ถูกเลย ผมเน้นความเป๊ะมากไป … ต่อไปจะลองปล่อยงานที่ ‘ดีพอ’ ก่อนแล้วค่อยปรับ"
+                ],
+                playbook: [
+                    "ใช้กฎ 80/20 (ทำ 20% ที่สำคัญให้เสร็จ → ได้ผล 80%)",
+                    "ตั้งเส้นตายที่ตัดจริง ไม่เลื่อน",
+                    "ฉลองงานเล็ก ๆ ที่เสร็จแล้ว",
+                    "ขอความคิดเห็นจากคนอื่นเร็ว ๆ แทนรอให้งานสมบูรณ์",
+                    "ปล่อยงานเวอร์ชันทดลองก่อนสมบูรณ์"
+                ]
+            }
+        };
 
+        const questions = [
+            { text: "เวลาเจอคนใหม่ ๆ คุณมัก…", answers: [ { text: "เงียบ สังเกตก่อน แล้วค่อยพูด", type: "WG", weight: 2 }, { text: "พยายามทำให้บรรยากาศสนุก เข้ากับทุกคนได้", type: "AS", weight: 2 }, { text: "ชอบเป็นคนคุมเกม คุมการคุย", type: "OC", weight: 1 }, { text: "พูดน้อย ๆ แล้วหลบให้คนอื่นคุย", type: "CA", weight: 1 } ] },
+            { text: "ถ้ามีคนทักหาคุณตอนดึก ๆ (เช่น 5 ทุ่ม) คุณจะ…", answers: [ { text: "ตอบกลับทันที ไม่อยากให้ค้างคา", type: "BB", weight: 2 }, { text: "บอกสั้น ๆ ว่าจะตอบพรุ่งนี้เช้า", type: "WG", weight: 1 }, { text: "ตั้งใจเก็บไว้เช้าแล้วค่อยตอบ", type: "PF", weight: 2 }, { text: "ขอโทษหลายครั้ง กลัวเขาไม่สบายใจ", type: "AS", weight: 1 } ] },
+            { text: "เวลามีข้อมูลใหม่ที่สวนทางกับสิ่งที่คิดไว้ คุณจะ…", answers: [ { text: "รีบเปลี่ยนตามข้อมูลใหม่ทันที", type: "CR", weight: 2 }, { text: "สรุปเป็นข้อ ๆ ให้เข้าใจง่ายก่อน", type: "CD", weight: 2 }, { text: "ยืนยันตามแผนเดิมไปก่อน", type: "PF", weight: 1 }, { text: "ถามความเห็นทุกคนก่อนตัดสินใจ", type: "AS", weight: 1 } ] },
+            { text: "ถ้าเพื่อนมาสายเป็นประจำ คุณจะ…", answers: [ { text: "พูดตรง ๆ ไปเลยว่า “ขอมาตรงเวลาหน่อย”", type: "OC", weight: 2 }, { text: "ไม่อยากให้ทะเลาะ เลยเงียบไว้", type: "CA", weight: 2 }, { text: "ส่งข้อความยาว ๆ ระบายความรู้สึก", type: "CD", weight: 1 }, { text: "เปลี่ยนนัดไปเรื่อย ๆ แต่ไม่บอกตรง ๆ", type: "CR", weight: 1 } ] },
+            { text: "ถ้ามีคนให้คุณอธิบายเรื่องยาก ๆ คุณจะ…", answers: [ { text: "จัดเรียง 1–2–3 พร้อมยกตัวอย่างง่าย ๆ", type: "CD", weight: 2 }, { text: "ถามก่อนว่าคนฟังอยากรู้แบบไหน แล้วปรับให้เข้ากับเขา", type: "AS", weight: 2 }, { text: "ตอบสั้น ๆ แค่ประเด็นหลัก", type: "WG", weight: 1 }, { text: "สัญญาว่าจะเขียนโน้ต/ส่งไฟล์ให้ทีหลัง", type: "BB", weight: 1 } ] },
+            { text: "ถ้าทีมยังเลือกแนวทางไม่ได้ คุณจะ…", answers: [ { text: "สรุปให้เอง แล้วกำหนดขั้นตอนทันที", type: "OC", weight: 2 }, { text: "เสนอให้ลอง 2 ทางเลือกสั้น ๆ", type: "CR", weight: 2 }, { text: "พยายามหาทางสายกลางที่ทุกคนยอมรับได้", type: "AS", weight: 1 }, { text: "เลื่อนการตัดสินใจไปก่อนเพื่อไม่ให้ทะเลาะ", type: "CA", weight: 1 } ] },
+            { text: "ถ้าได้รับข้อความตอนเที่ยงคืน คุณจะ…", answers: [ { text: "ตอบกลับทันที", type: "BB", weight: 2 }, { text: "พิมพ์สั้น ๆ ว่า “เดี๋ยวตอบพรุ่งนี้เช้า”", type: "WG", weight: 2 }, { text: "ตั้งเวลาให้ระบบส่งข้อความตอนเช้า", type: "PF", weight: 1 }, { text: "ปล่อยไว้ เช้าแล้วค่อยตอบ", type: "CA", weight: 1 } ] },
+            { text: "ถ้าแชทกลุ่มเริ่มทะเลาะกัน คุณจะ…", answers: [ { text: "สรุปประเด็น แล้ววางกติกาใหม่ให้ชัด", type: "CD", weight: 2 }, { text: "เสนอให้หยุดคุยไว้ก่อน รอใจเย็นแล้วค่อยคุย", type: "CA", weight: 2 }, { text: "ตัดจบด้วยการกำหนดให้ทำตามแนวเดียว", type: "OC", weight: 1 }, { text: "แยกไปคุยนอกรอบจนกว่าจะเคลียร์", type: "BB", weight: 1 } ] },
+            { text: "ถ้ามีคนขอให้ช่วยงานในวันหยุดที่คุณยุ่งอยู่แล้ว คุณจะ…", answers: [ { text: "ตอบตกลง เพราะไม่อยากให้เขาผิดหวัง", type: "AS", weight: 2 }, { text: "ปฏิเสธสุภาพ ๆ พร้อมบอกช่วงเวลาที่คุณทำได้", type: "PF", weight: 2 }, { text: "ตอบสั้น ๆ ว่าไม่สะดวก", type: "WG", weight: 1 }, { text: "บอกให้รอ เดี๋ยวคุณขอดูตารางใหม่", type: "CR", weight: 1 } ] },
+            { text: "ถ้าแผนงานเปลี่ยนกะทันหัน คุณจะ…", answers: [ { text: "ปรับแผนใหม่ทันที", type: "CR", weight: 2 }, { text: "ทักนอกเวลาเพื่อเร่งเคลียร์", type: "BB", weight: 2 }, { text: "ย้ำให้ทีมทำตามแผนเดิมก่อน", type: "OC", weight: 1 }, { text: "รวบรวมข้อดีข้อเสีย แล้วค่อยนัดคุยเป็นระบบ", type: "CD", weight: 1 } ] },
+            { text: "ถ้าใกล้เดดไลน์แต่งานยังไม่เสร็จ คุณจะ…", answers: [ { text: "ปล่อยเวอร์ชัน “ทำได้แค่นี้ก่อน”", type: "PF", weight: 2 }, { text: "เรียกทีมมาคุมทิศทางให้ตรงกันทันที", type: "OC", weight: 2 }, { text: "ทักคุยนอกรอบเพื่อเร่งแก้", type: "BB", weight: 1 }, { text: "เพิ่มรายละเอียดเอกสาร แม้จะช้าลง", type: "CD", weight: 1 } ] },
+            { text: "ถ้าคุณทำผิดพลาดกับใครบางคน คุณจะ…", answers: [ { text: "ขอโทษสั้น ๆ พร้อมบอกวิธีแก้", type: "WG", weight: 2 }, { text: "ขอเวลาสงบก่อน แล้วค่อยนัดเคลียร์", type: "CA", weight: 2 }, { text: "ทำเช็กลิสต์กันผิดซ้ำในอนาคต", type: "PF", weight: 1 }, { text: "พยายามปรับตัวให้คนรอบข้างสบายใจ", type: "AS", weight: 1 } ] }
+        ];
 
-               <div class="cta-section">
-                   <h3>สิ่งที่คุณเห็นใน Mind Mirror คือแค่เงาสะท้อนแรก</h3>
-                   <p>ถ้าอยากรู้จักตัวเองลึกจริง → ลอง Deep Psychology Test Pro</p>
-                   <p style="margin-top: 1rem;">เจาะลึก 8 มิติชีวิต พร้อมคู่มือที่ใช้ได้จริง</p>
-                   <ul>
-                       <li>🧬 DNA บุคลิกภาพ</li>
-                       <li>⭐ จุดแข็ง & ⚠️ จุดอ่อน</li>
-                       <li>💼 งานที่เหมาะกับคุณ</li>
-                       <li>💕 ความรักและความสัมพันธ์</li>
-                       <li>🚀 แผนพัฒนาตัวเองเจาะจง</li>
-                       <li>💎 ข้อความลับเฉพาะคุณ</li>
-                   </ul>
-                   <a href="https://ddtpro.framer.website/" target="_blank" class="btn btn-primary-pro final-cta-btn">🔮 คลิกดูรายละเอียดเลย</a>
-               </div>
-              
-               <div id="retakeBtn">
-                   <button class="btn btn-secondary">ทำแบบทดสอบอีกครั้ง</button>
-               </div>
+        // --- STATE ---
+        let currentQuestionIndex = 0;
+        let userAnswers = new Array(questions.length).fill(null);
+        let awarenessChartInstance = null;
+        let shuffledQuestions = [];
+        
+        // --- DOM ELEMENTS ---
+        const introSection = document.getElementById('intro-section');
+        const quizSection = document.getElementById('quiz-section');
+        const resultsSection = document.getElementById('results-section');
+        const startTestBtn = document.getElementById('startTestBtn');
+        const questionText = document.getElementById('question-text');
+        const answersContainer = document.getElementById('answers-container');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const progressFill = document.getElementById('progress-bar-fill');
+        const progressText = document.getElementById('progress-text');
 
+        // --- FUNCTIONS ---
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
 
-           </section>
-       </div>
-   </div>
-   <script>
-   document.addEventListener('DOMContentLoaded', () => {
+        function startTest() {
+            introSection.classList.add('hidden');
+            resultsSection.classList.add('hidden');
+            quizSection.classList.remove('hidden');
 
+            // --- Shuffle logic ---
+            shuffledQuestions = JSON.parse(JSON.stringify(questions));
+            shuffleArray(shuffledQuestions);
+            shuffledQuestions.forEach(q => shuffleArray(q.answers));
 
-       // --- DATA ---
-       const archetypes = {
-           WG: {
-               name: "Warmth Gap",
-               tagline: "ดูเย็นชา/ห่างเหิน",
-               icon: "❄️",
-               desc: "คุณเก่งด้านเหตุผลและเนื้อหา แต่โทนการสื่อสารอาจทำให้คนรู้สึกว่าคุณไม่เป็นมิตร ทั้งที่จริงคุณใส่ใจมาก เพียงแต่ไม่ถนัดการแสดงออก",
-               chips: ["#นิ่งจริงจัง", "#ไม่ค่อยแสดงอารมณ์", "#ดูเหมือนไม่แคร์"],
-               trigger: "มักโผล่เมื่อคุณโฟกัสงานหรือเหนื่อยล้า",
-               why: "<strong>Warmth–Competence Model</strong><br>ที่อธิบายว่าเวลาคนประเมินใคร เขาจะดูว่า “อบอุ่นไหม” ก่อนจะดูว่า “เก่งไหม” คุณที่โฟกัสเนื้อหาเลยถูกมองว่าไม่ใส่ใจ ทั้งที่จริงคุณแค่ไม่ถนัดแสดงออก",
-               audit: [
-                   "ใช่ครับ/ค่ะ ผมอาจดูนิ่งไปหน่อย … แต่จริง ๆ แล้วผมใส่ใจคุณมาก เพียงแค่ไม่ค่อยพูด",
-                   "จริงครับ/ค่ะ บางทีผมโฟกัสที่งานจนลืมแสดงอารมณ์ … ผมจะพยายามปรับให้มากขึ้น",
-                   "ใช่เลย ผมไม่ค่อยพูดหวาน ๆ … แต่ผมอยากให้คุณรู้ว่าผมแสดงออกผ่านการกระทำ"
-               ],
-               playbook: [
-                   "สบตากับคู่สนทนา 2–3 วิก่อนพูด",
-                   "พยักหน้าหรือยิ้มเล็กน้อยเวลาฟัง",
-                   "ส่งข้อความสั้น ๆ หลังเจอกัน (“ถึงบ้านปลอดภัยนะ”)",
-                   "ใช้คำพูดง่าย ๆ ที่สื่อความเข้าใจ เช่น “ฉันเข้าใจนะที่คุณรู้สึกแบบนี้”",
-                   "เพิ่มท่าทางกาย เช่น ก้มศีรษะเล็กน้อยแทนการนิ่งเฉย"
-               ]
-           },
-           BB: {
-               name: "Boundary Blur",
-               tagline: "ไม่เคารพเวลา/ขอบเขต",
-               icon: "⏳",
-               desc: "คุณเป็นคนให้ใจ แต่บางครั้งเลยก้าวล้ำ เช่น ทักหาคนตอนดึก หรือคาดหวังคำตอบเร็ว ทั้งที่อีกฝ่ายอาจไม่สะดวก",
-               chips: ["#ไม่ให้พื้นที่", "#ทักไม่ดูเวลา", "#ไม่เกรงใจ"],
-               trigger: "มักโผล่เมื่อคุณกังวลหรือใจร้อนอยากเคลียร์ทันที",
-               why: "<strong>Boundary Theory</strong><br>ที่อธิบายว่าทุกคนมีเส้นแบ่ง “เวลาส่วนตัว” กับ “เวลาสังคม/งาน” ที่ต่างกัน เมื่อคุณใจร้อนทักหานอกเวลา จึงถูกมองว่ารุกล้ำพื้นที่ส่วนตัว",
-               audit: [
-                   "จริงครับ/ค่ะ ผมอาจทักตอนที่คุณไม่สะดวก … ต่อไปผมจะถามก่อนว่าคุยได้ไหม",
-                   "ใช่ครับ/ค่ะ ผมบางทีใจร้อน อยากคุยทันที … แต่ผมรู้แล้วว่าทุกคนต้องมีเวลาของตัวเอง",
-                   "ถูกต้องเลย ผมอาจไม่ทันคิด … ครั้งหน้าขอเราตั้งเวลาที่เหมาะสมร่วมกัน"
-               ],
-               playbook: [
-                   "ระบุเวลาทำงาน/พักให้ชัด เช่น “สะดวกคุย 10.00–20.00”",
-                   "ก่อนทักถามว่า “ตอนนี้สะดวกคุยไหมครับ/คะ?”",
-                   "งดส่งข้อความเกิน 3 ทุ่ม",
-                   "ถ้าอีกฝ่ายไม่ตอบทันที อย่าทวงซ้ำ",
-                   "ฝึกเว้นช่วงเวลาในการตอบบ้าง ไม่ต้องรีบเสมอไป"
-               ]
-           },
-           CR: {
-               name: "Consistency Risk",
-               tagline: "ไม่นิ่ง/เปลี่ยนใจง่าย",
-               icon: "🌪️",
-               desc: "คุณชอบลองสิ่งใหม่ ไม่กลัวเปลี่ยนเส้นทาง และยืดหยุ่นกับสถานการณ์ แต่บางครั้งคนอื่นอาจรู้สึกว่าคุณไม่น่าเชื่อถือ เพราะเปลี่ยนความคิดหรือการตัดสินใจบ่อยเกินไป",
-               chips: ["#เอาแน่ไม่ได้", "#พูดไม่เหมือนเดิม", "#เปลี่ยนตลอด"],
-               trigger: "มักโผล่เมื่อเจอข้อมูลใหม่หรือสถานการณ์ไม่คาดคิด",
-               why: "<strong>Consistency Principle</strong><br>ที่อธิบายว่าคนเรามักให้ค่ากับความ “คงเส้นคงวา” มากกว่าความเปลี่ยนแปลง แม้ความยืดหยุ่นของคุณจะมีเหตุผล แต่ก็อาจถูกมองว่าไม่น่าเชื่อถือ",
-               audit: [
-                   "จริงครับ/ค่ะ ผมเปลี่ยนบ่อยเพราะกำลังหาทางที่ดีที่สุด … ไม่ใช่ว่าไม่มีเหตุผล",
-                   "ใช่ครับ/ค่ะ ผมยังทดลองอยู่ … แต่ทุกการเปลี่ยนมีการบันทึกและเหตุผลชัดเจน",
-                   "ถูกเลย ผมอาจดูไม่นิ่ง … แต่ผมคิดว่าความยืดหยุ่นช่วยให้หาทางออกใหม่ ๆ ได้เสมอ"
-               ],
-               playbook: [
-                   "เขียนบันทึกเหตุผลของแต่ละการตัดสินใจ",
-                   "เมื่อเปลี่ยน ให้บอกสั้น ๆ ว่า “ผมเปลี่ยนเพราะ…”",
-                   "ใช้คำว่า “กำลังลอง” แทนการบอกว่า “ตัดสินใจแล้ว”",
-                   "ตั้งกรอบเวลาให้ตัวเอง เช่น “จะตัดสินใจภายใน 2 สัปดาห์”",
-                   "แจ้งคนรอบตัวว่าตอนนี้คุณอยู่ใน “ช่วงทดลอง”"
-               ]
-           },
-           CD: {
-               name: "Clarity Deficit",
-               tagline: "พูดไม่ชัด/วกวน",
-               icon: "💬",
-               desc: "คุณรู้เยอะและมีข้อมูลมาก แต่เวลาอธิบายอาจเล่ายืดยาวจนคนฟังหลงทาง ทำให้ความเก่งของคุณไม่ถูกสื่อออกไปเต็มที่",
-               chips: ["#วกวน", "#สรุปไม่เป็น", "#จับใจความยาก"],
-               trigger: "มักโผล่เมื่อคุณพยายามอธิบายเรื่องที่ซับซ้อน",
-               why: "<strong>Processing Fluency</strong><br>ที่อธิบายว่า “สิ่งที่เข้าใจง่าย = น่าเชื่อถือกว่า” เมื่อคุณอธิบายซับซ้อนเกินไป คนฟังจะใช้พลังงานเยอะและอาจสรุปว่าสิ่งที่คุณพูดไม่น่าเชื่อถือ",
-               audit: [
-                   "จริงครับ/ค่ะ ผมบางทีพูดรายละเอียดเยอะเกิน … ขออนุญาตสรุปสั้น ๆ",
-                   "ใช่ครับ/ค่ะ ผมอาจเล่าไม่เป็นระเบียบ … งั้นผมเรียงใหม่เป็นข้อ ๆ ให้เลยนะ",
-                   "ถูกครับ/ค่ะ ผมอาจไม่ชัดเจน … ต่อไปจะเริ่มจากสรุปก่อน"
-               ],
-               playbook: [
-                   "ใช้กฎ “พูด 3 ข้อหลัก”",
-                   "เวลาพิมพ์ ให้สรุปใจความ 2–3 ประโยคท้าย",
-                   "ฝึกเล่าเรื่องให้เด็กฟัง เพื่อปรับให้ง่ายขึ้น",
-                   "พูดให้สั้นลงกว่าที่คิด 30%",
-                   "เริ่มต้นด้วย “ประเด็นหลักมี 2 เรื่อง…”"
-               ]
-           },
-           OC: {
-               name: "Overcontrol",
-               tagline: "ชอบบงการ/เถียงเก่ง",
-               icon: "🕹️",
-               desc: "คุณมั่นใจในความคิดและอยากให้งานออกมาดีที่สุด จึงชอบควบคุมหรือยืนยันในสิ่งที่คิด แต่บางครั้งสิ่งนี้ทำให้คนอื่นรู้สึกเหมือนคุณไม่เปิดโอกาสให้เลือก",
-               chips: ["#ชอบบังคับ", "#ไม่ฟังใคร", "#เอาแต่ใจ"],
-               trigger: "มักโผล่เมื่อคุณเชื่อมั่นในความคิดของตัวเองมาก ๆ",
-               why: "<strong>Reactance Theory</strong><br>ที่อธิบายว่าเมื่อคนรู้สึกถูกบังคับหรือจำกัดอิสรภาพ เขามักจะต่อต้านทันที แม้ว่าสิ่งที่คุณเสนอนั้นจะดีที่สุดก็ตาม",
-               audit: [
-                   "จริงครับ/ค่ะ ผมอาจกดดันไปหน่อย … ต่อไปจะเปิดให้คุณเลือกมากขึ้น",
-                   "ใช่ครับ/ค่ะ ผมเถียงบ่อยเพราะอยากหาคำตอบที่ดีที่สุด … แต่ผมเข้าใจว่ามันทำให้คุณอึดอัด",
-                   "ถูกเลย ผมอาจผลักแรงไป … ครั้งนี้อยากให้คุณตัดสินใจ แล้วผมจะสนับสนุน"
-               ],
-               playbook: [
-                   "ใช้คำว่า “คุณอยาก…” แทน “คุณต้อง…”",
-                   "เสนอทางเลือก 2–3 แบบแทนการบอกตรง ๆ",
-                   "ฟังให้จบก่อนตอบ",
-                   "ชื่นชมไอเดียคนอื่นก่อนเสนอของตัวเอง",
-                   "ถามว่า “คุณคิดยังไง” ก่อนสรุป"
-               ]
-           },
-           CA: {
-               name: "Conflict Avoider",
-               tagline: "เลี่ยงความขัดแย้ง",
-               icon: "🕊️",
-               desc: "คุณรักความสงบ ไม่อยากมีปัญหากับใคร เวลามีเรื่องขัดแย้งมักเลือกเงียบหรือถอย แต่ผลคือปัญหาที่ควรแก้กลับถูกดองจนกลายเป็นเรื่องใหญ่",
-               chips: ["#ไม่พูดตรงๆ", "#หนีปัญหา", "#ไม่เคลียร์"],
-               trigger: "มักโผล่เมื่อสถานการณ์เริ่มตึงเครียด",
-               why: "<strong>Conflict Management Styles</strong><br>ที่อธิบายว่ารูปแบบการจัดการความขัดแย้งของคุณคือ “การเลี่ยง” ซึ่งมีประโยชน์ในการลดความตึงเครียดระยะสั้น แต่ทำให้ปัญหาระยะยาวยังคงอยู่",
-               audit: [
-                   "จริงครับ/ค่ะ ผมไม่ชอบการทะเลาะ … แต่บางเรื่องควรพูดให้ชัดเจน",
-                   "ใช่ครับ/ค่ะ ผมมักเลี่ยงเพราะอยากรักษาความสัมพันธ์ … แต่ผมจะลองคุยตรง ๆ แบบใจเย็น",
-                   "ถูกเลย ผมอาจเก็บไว้ในใจมากเกินไป … ครั้งนี้ผมอยากอธิบายความรู้สึกให้คุณเข้าใจ"
-               ],
-               playbook: [
-                   "ใช้ประโยคเริ่มด้วย “ผมรู้สึกว่า…”",
-                   "เลือกคุยตอนที่อารมณ์เย็น",
-                   "เขียนประเด็นไว้ก่อนแล้วค่อยพูด",
-                   "เริ่มด้วยเรื่องเล็ก ๆ เช่น “ฉันไม่ชอบเวลา…”",
-                   "ซ้อมพูดกับเพื่อน/ในกระจกก่อนคุยจริง"
-               ]
-           },
-           AS: {
-               name: "Approval-Seeker",
-               tagline: "อยากให้ทุกคนพอใจ",
-               icon: "❤️‍🩹",
-               desc: "คุณอยากทำให้ทุกคนชอบและไม่ผิดหวัง เลยมักจะตอบรับทุกคำขอ แต่ผลคือบางครั้งคุณเหนื่อยเกินไป และคนอื่นไม่รู้ว่าคุณคิดอะไรจริง ๆ",
-               chips: ["#ไม่จริงใจ", "#ไม่กล้าปฏิเสธ", "#ไม่มีความคิดตัวเอง"],
-               trigger: "มักโผล่เมื่อต้องตัดสินใจที่อาจมีคนไม่เห็นด้วย",
-               why: "<strong>Need for Approval</strong><br>ที่อธิบายว่าคือความต้องการการยอมรับจากคนรอบตัว ซึ่งเป็นเรื่องปกติ แต่หากมากเกินไปจะทำให้คุณสูญเสียความเป็นตัวเองและพลังงานไป",
-               audit: [
-                   "จริงครับ/ค่ะ ผมอยากให้ทุกคนสบายใจ … แต่บางทีก็ลืมดูแลตัวเอง",
-                   "ใช่ครับ/ค่ะ ผมพยายามทำให้ทุกฝ่ายพอใจ … แต่รู้แล้วว่ามันทำไม่ได้เสมอไป",
-                   "ถูกเลย ผมไม่ค่อยกล้าปฏิเสธ … แต่ผมกำลังฝึกบาลานซ์มากขึ้น"
-               ],
-               playbook: [
-                   "ตอบว่า “ขอคิดดูก่อน” แทนการตอบทันที",
-                   "เขียนลิสต์ว่าอะไรบ้างที่ “ไม่อยากทำ”",
-                   "เลือกช่วยเฉพาะเรื่องที่ไม่ทำให้คุณเหนื่อยเกินไป",
-                   "ฝึกปฏิเสธด้วยคำสุภาพ เช่น “ตอนนี้ยังไม่สะดวก”",
-                   "ให้รางวัลตัวเองเมื่อกล้าปฏิเสธครั้งแรก ๆ"
-               ]
-           },
-           PF: {
-               name: "Perfectionist",
-               tagline: "เป๊ะเกินไป/จุกจิก",
-               icon: "🎯",
-               desc: "คุณใส่ใจรายละเอียดและอยากให้งานออกมาดีที่สุด แต่บางครั้งความเป๊ะเกินไปทำให้เสียเวลา ทำให้งานเสร็จช้า และทำให้คนอื่นรู้สึกว่าคุณเข้มงวดเกินไป",
-               chips: ["#จุกจิก", "#ไม่เสร็จซักที", "#ซีเรียสเกิน"],
-               trigger: "มักโผล่เมื่อคุณทำงานที่สำคัญกับตัวเองมาก ๆ",
-               why: "<strong>Perfectionism</strong><br>ที่อธิบายว่าคือความเชื่อว่าต้องทำให้สมบูรณ์แบบตลอดเวลา ซึ่งอาจนำไปสู่การผัดวันประกันพรุ่ง (เพราะกลัวไม่ดีพอ) และสร้างความเครียดโดยไม่จำเป็น",
-               audit: [
-                   "จริงครับ/ค่ะ ผมชอบเก็บรายละเอียดเยอะ … แต่บางครั้งก็ทำให้ช้าเกินไป",
-                   "ใช่ครับ/ค่ะ ผมอาจดูจุกจิก … เพราะอยากให้งานออกมาดีที่สุด",
-                   "ถูกเลย ผมเน้นความเป๊ะมากไป … ต่อไปจะลองปล่อยงานที่ ‘ดีพอ’ ก่อนแล้วค่อยปรับ"
-               ],
-               playbook: [
-                   "ใช้กฎ 80/20 (ทำ 20% ที่สำคัญให้เสร็จ → ได้ผล 80%)",
-                   "ตั้งเส้นตายที่ตัดจริง ไม่เลื่อน",
-                   "ฉลองงานเล็ก ๆ ที่เสร็จแล้ว",
-                   "ขอความคิดเห็นจากคนอื่นเร็ว ๆ แทนรอให้งานสมบูรณ์",
-                   "ปล่อยงานเวอร์ชันทดลองก่อนสมบูรณ์"
-               ]
-           }
-       };
+            currentQuestionIndex = 0;
+            userAnswers.fill(null);
+            renderQuestion();
+        }
 
+        function renderQuestion() {
+            const question = shuffledQuestions[currentQuestionIndex];
+            questionText.textContent = question.text;
+            answersContainer.innerHTML = '';
 
-       const questions = [
-           { text: "พบปะคนใหม่ในวงสนทนาเล็ก ๆ คุณมัก…", answers: [ { text: "สังเกตบรรยากาศก่อน แล้วจึงพูดเมื่อมีประเด็นจำเป็น", type: "WG", weight: 2 }, { text: "ชวนทุกคนสนทนาเพื่อให้บรรยากาศผ่อนคลาย", type: "AS", weight: 2 }, { text: "จัดลำดับการพูดคุยให้เป็นระเบียบ", type: "OC", weight: 1 }, { text: "พูดสั้น ๆ แล้วเว้นระยะเพื่อหลีกเลี่ยงความเก้อเขิน", type: "CA", weight: 1 } ] },
-           { text: "ระหว่างพักผ่อน มีผู้ติดต่อมาขอคุยยาวนอกเวลา", answers: [ { text: "ตอบกลับทันทีแม้เป็นเวลาส่วนตัว", type: "BB", weight: 2 }, { text: "ตั้งเวลาไว้ตอบในช่วงเวลาทำงาน", type: "PF", weight: 2 }, { text: "แจ้งสั้น ๆ ว่าจะตอบเมื่อสะดวก", type: "WG", weight: 1 }, { text: "ขอโทษหลายครั้งเพื่อไม่ให้คู่สนทนาไม่สบายใจ", type: "AS", weight: 1 } ] },
-           { text: "ได้ข้อมูลใหม่ที่ขัดกับแผนเดิม", answers: [ { text: "ปรับแผนทันทีตามข้อมูลล่าสุด", type: "CR", weight: 2 }, { text: "สรุปสาระสำคัญให้เข้าใจง่ายก่อนตัดสินใจ", type: "CD", weight: 2 }, { text: "รักษาแผนเดิมไว้ชั่วคราวเพื่อคงมาตรฐาน", type: "PF", weight: 1 }, { text: "เปิดให้ทีมลงคะแนนเพื่อหลีกเลี่ยงความขัดแย้ง", type: "AS", weight: 1 } ] },
-           { text: "เพื่อนมาสายซ้ำ ๆ คุณจะ…", answers: [ { text: "แจ้งอย่างตรงไปตรงมาและกำหนดกติกาเวลาใหม่", type: "OC", weight: 2 }, { text: "เว้นวรรคการพูดคุย เพื่อไม่ให้บรรยากาศตึงเครียด", type: "CA", weight: 2 }, { text: "ส่งข้อความอธิบายความรู้สึกอย่างละเอียด", type: "CD", weight: 1 }, { text: "ปรับเวลานัดทุกครั้งตามสถานการณ์โดยไม่กล่าวถึงสาเหตุ", type: "CR", weight: 1 } ] },
-           { text: "ต้องอธิบายเรื่องยากให้คนทั่วไปเข้าใจ", answers: [ { text: "ใช้โครงสร้าง 1–2–3 พร้อมตัวอย่างเข้าใจง่าย", type: "CD", weight: 2 }, { text: "สอบถามความต้องการผู้ฟังก่อน แล้วปรับรูปแบบให้เหมาะสม", type: "AS", weight: 2 }, { text: "สรุปสั้นและตรงประเด็น ให้ผู้ถามต่อยอดเอง", type: "WG", weight: 1 }, { text: "แจ้งว่าจะจัดทำโน้ต/ไฟล์เสียงเพิ่มเติมภายหลัง", type: "BB", weight: 1 } ] },
-           { text: "กลุ่มยังตัดสินใจไม่ได้ว่าจะเลือกแนวทางใด", answers: [ { text: "สรุปให้และกำหนดขั้นตอนดำเนินการทันที", type: "OC", weight: 2 }, { text: "เสนอทดลอง 2 ทางเลือกแบบระยะสั้นก่อน", type: "CR", weight: 2 }, { text: "ค้นหาทางสายกลางที่ทุกคนยอมรับได้", type: "AS", weight: 1 }, { text: "เลื่อนการตัดสินใจเพื่อหลีกเลี่ยงความตึงเครียด", type: "CA", weight: 1 } ] },
-           { text: "ได้รับข้อความเวลา 23:30 น.", answers: [ { text: "ตอบกลับทันทีเพื่อไม่ให้ค้างคา", type: "BB", weight: 2 }, { text: "แจ้งสั้น ๆ ว่าจะตอบในช่วงเช้า", type: "WG", weight: 2 }, { text: "ตั้งเวลาให้ระบบส่งคำตอบในตอนเช้า", type: "PF", weight: 1 }, { text: "ปล่อยไว้จนเช้าแล้วค่อยจัดการ", type: "CA", weight: 1 } ] },
-           { text: "แชตกลุ่มเริ่มถกเถียงรุนแรง", answers: [ { text: "สรุปประเด็นและวางกติกาการสนทนาให้ชัด", type: "CD", weight: 2 }, { text: "ขอพักการสนทนาชั่วคราวเพื่อให้ทุกฝ่ายสงบ", type: "CA", weight: 2 }, { text: "กำหนดแนวทางเดียวให้ปฏิบัติทันที", type: "OC", weight: 1 }, { text: "ย้ายไปคุยนอกเวลาเพื่อให้คุยจนได้ข้อสรุป", type: "BB", weight: 1 } ] },
-           { text: "มีคนขอความช่วยเหลือในวันเสาร์ ทั้งที่ตารางคุณแน่น", answers: [ { text: "ตอบตกลงเพื่อไม่ให้เขาผิดหวัง", type: "AS", weight: 2 }, { text: "ปฏิเสธอย่างสุภาพ พร้อมเสนอเวลาที่ทำได้", type: "PF", weight: 2 }, { text: "ตอบสั้น ๆ ว่าไม่สะดวกโดยไม่ขยายความ", type: "WG", weight: 1 }, { text: "ขอเวลาพิจารณา 1 วันเพื่อจัดตารางใหม่", type: "CR", weight: 1 } ] },
-           { text: "แผนงานเปลี่ยนกะทันหัน", answers: [ { text: "ปรับแผนทันทีให้เข้ากับสถานการณ์", type: "CR", weight: 2 }, { text: "ติดต่อประเด็นสำคัญนอกเวลาเพื่อเร่งความคืบหน้า", type: "BB", weight: 2 }, { text: "ย้ำให้คงแนวทางเดิมเพื่อลดความสับสน", type: "OC", weight: 1 }, { text: "รวบรวมข้อดี–ข้อเสีย แล้วนัดคุยอย่างเป็นระบบ", type: "CD", weight: 1 } ] },
-           { text: "ใกล้กำหนดส่ง แต่งานยังไม่เรียบร้อย", answers: [ { text: "ปล่อยเวอร์ชัน “ดีพอแล้ว” และวางรอบปรับปรุง", type: "PF", weight: 2 }, { text: "รวมทีมให้เดินทิศทางเดียวทันที", type: "OC", weight: 2 }, { text: "ขอคุยนอกเวลาเพื่อเร่งแก้ไข", type: "BB", weight: 1 }, { text: "เพิ่มรายละเอียดเอกสาร แม้ใช้เวลามากขึ้น", type: "CD", weight: 1 } ] },
-           { text: "หลังจากคุณทำพลาดกับใครบางคน", answers: [ { text: "ขอโทษสั้น กระชับ พร้อมแผนแก้ไข", type: "WG", weight: 2 }, { text: "ขอเวลาสงบก่อน แล้วค่อยนัดคุยเพื่อเคลียร์", type: "CA", weight: 2 }, { text: "จัดทำเช็กลิสต์ป้องกันไม่ให้เกิดซ้ำ", type: "PF", weight: 1 }, { text: "เปลี่ยนวิธีดำเนินการทันทีเพื่อลดความผิดพลาดซ้ำ", type: "CR", weight: 1 } ] }
-       ];
+            question.answers.forEach((answer) => {
+                const button = document.createElement('button');
+                button.className = 'answer-option';
+                button.textContent = answer.text;
+                button.dataset.answer = JSON.stringify(answer);
+                
+                const currentSelection = userAnswers[currentQuestionIndex];
+                if (currentSelection && currentSelection.text === answer.text) {
+                    button.classList.add('selected');
+                }
+                answersContainer.appendChild(button);
+            });
 
+            updateNavigation();
+            updateProgressBar();
+        }
 
-       // --- STATE ---
-       let currentQuestionIndex = 0;
-       let userAnswers = new Array(questions.length).fill(null);
-       let awarenessChartInstance = null;
-       let shuffledQuestions = [];
-      
-       // --- DOM ELEMENTS ---
-       const introSection = document.getElementById('intro-section');
-       const quizSection = document.getElementById('quiz-section');
-       const resultsSection = document.getElementById('results-section');
-       const startTestBtn = document.getElementById('startTestBtn');
-       const questionText = document.getElementById('question-text');
-       const answersContainer = document.getElementById('answers-container');
-       const prevBtn = document.getElementById('prevBtn');
-       const nextBtn = document.getElementById('nextBtn');
-       const progressFill = document.getElementById('progress-bar-fill');
-       const progressText = document.getElementById('progress-text');
+        function selectAnswer(e) {
+            if (e.target.classList.contains('answer-option')) {
+                const selectedAnswer = JSON.parse(e.target.dataset.answer);
+                userAnswers[currentQuestionIndex] = selectedAnswer;
+                
+                const options = answersContainer.querySelectorAll('.answer-option');
+                options.forEach(opt => opt.classList.remove('selected'));
+                e.target.classList.add('selected');
+                
+                nextBtn.disabled = false;
+                
+                setTimeout(() => {
+                    if (currentQuestionIndex < questions.length - 1) {
+                        currentQuestionIndex++;
+                        renderQuestion();
+                    } else {
+                        calculateAndShowResults();
+                    }
+                }, 300);
+            }
+        }
 
+        function updateNavigation() {
+            prevBtn.style.visibility = currentQuestionIndex > 0 ? 'visible' : 'hidden';
+            nextBtn.disabled = userAnswers[currentQuestionIndex] === null;
+            if (currentQuestionIndex === questions.length - 1) {
+                nextBtn.textContent = 'ดูผลลัพธ์';
+            } else {
+                nextBtn.textContent = 'ต่อไป';
+            }
+        }
+        
+        function updateProgressBar() {
+            const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+            progressFill.style.width = `${progress}%`;
+            progressText.textContent = `ข้อที่ ${currentQuestionIndex + 1} จาก ${questions.length}`;
+        }
 
-       // --- FUNCTIONS ---
-       function shuffleArray(array) {
-           for (let i = array.length - 1; i > 0; i--) {
-               const j = Math.floor(Math.random() * (i + 1));
-               [array[i], array[j]] = [array[j], array[i]];
-           }
-       }
+        function handleNextButtonClick() {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                renderQuestion();
+            } else {
+                calculateAndShowResults();
+            }
+        }
 
+        function previousQuestion() {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                renderQuestion();
+            }
+        }
+        
+        function calculateAndShowResults() {
+            const scores = {};
+            const strongCounts = {};
+            const firstStrongIndex = {};
 
-       function startTest() {
-           introSection.classList.add('hidden');
-           resultsSection.classList.add('hidden');
-           quizSection.classList.remove('hidden');
+            Object.keys(archetypes).forEach(key => {
+                scores[key] = 0;
+                strongCounts[key] = 0;
+                firstStrongIndex[key] = Infinity;
+            });
+            
+            userAnswers.forEach((answer, index) => {
+                if(answer !== null) {
+                    scores[answer.type] += answer.weight;
+                    if (answer.weight === 2) {
+                        strongCounts[answer.type]++;
+                        if (index < firstStrongIndex[answer.type]) {
+                            firstStrongIndex[answer.type] = index;
+                        }
+                    }
+                }
+            });
 
+            const sortedScores = Object.keys(scores).sort((a, b) => {
+                // 1. Higher score wins
+                if (scores[b] !== scores[a]) {
+                    return scores[b] - scores[a];
+                }
+                // 2. Tie-break: More strong (w=2) answers win
+                if (strongCounts[b] !== strongCounts[a]) {
+                    return strongCounts[b] - strongCounts[a];
+                }
+                // 3. Tie-break: Earlier first strong answer wins
+                return firstStrongIndex[a] - firstStrongIndex[b];
+            });
+            
+            const topArchetypeKey = sortedScores[0];
+            const runnerUpArchetypeKey = sortedScores[1];
+            const topScore = scores[topArchetypeKey];
+            const runnerUpScore = scores[runnerUpArchetypeKey];
+            
+            displayResults(topArchetypeKey, runnerUpArchetypeKey, topScore, runnerUpScore);
+        }
 
-           // --- Shuffle logic ---
-           shuffledQuestions = JSON.parse(JSON.stringify(questions));
-           shuffleArray(shuffledQuestions);
-           shuffledQuestions.forEach(q => shuffleArray(q.answers));
+        function createArchetypeCard(key, isTop) {
+            const archetype = archetypes[key];
+            const chipsHTML = archetype.chips.map(chip => `<span class="chip">${chip}</span>`).join('');
+            return `
+                <div class="archetype-card ${isTop ? 'top-archetype' : ''}">
+                    <div class="archetype-title">
+                        <span class="archetype-icon">${archetype.icon}</span>
+                        <h3 class="archetype-name">${archetype.name} – “${archetype.tagline}”</h3>
+                    </div>
+                    <p class="archetype-desc">${archetype.desc}</p>
+                    ${isTop ? `<div class="archetype-chips">${chipsHTML}</div>` : ''}
+                    <p class="trigger-text">${archetype.trigger}</p>
+                </div>
+            `;
+        }
 
+        function createAccordion(title, contentItems) {
+            const contentHTML = `<ul>${contentItems.map(item => `<li><div>${item}</div></li>`).join('')}</ul>`;
+            return `
+                <div class="accordion-item">
+                    <button class="accordion-header">${title}</button>
+                    <div class="accordion-content">
+                        <div class="accordion-content-inner">${contentHTML}</div>
+                    </div>
+                </div>
+            `;
+        }
 
-           currentQuestionIndex = 0;
-           userAnswers.fill(null);
-           renderQuestion();
-       }
+        function displayResults(topKey, runnerUpKey, topScore, runnerUpScore) {
+            quizSection.classList.add('hidden');
+            resultsSection.classList.remove('hidden');
+            window.scrollTo(0, 0);
 
+            const topArchetypeContainer = document.getElementById('top-archetype-full-container');
+            const runnerUpArchetypeContainer = document.getElementById('runner-up-archetype-full-container');
 
-       function renderQuestion() {
-           const question = shuffledQuestions[currentQuestionIndex];
-           questionText.textContent = question.text;
-           answersContainer.innerHTML = '';
+            // --- Populate Top Archetype Section ---
+            let topHTML = createArchetypeCard(topKey, true);
+            topHTML += createAccordion(`ทำไมถึงถูกมองแบบนี้?`, [archetypes[topKey].why]);
+            topHTML += createAccordion(`จะรับมือยังไง (Accusation Audit)`, archetypes[topKey].audit);
+            topHTML += createAccordion(`คู่มือปรับตัว (Micro-Playbook)`, archetypes[topKey].playbook);
+            topArchetypeContainer.innerHTML = topHTML;
+            
+            // --- Populate Runner-up Archetype Section ---
+            let runnerUpHTML = createArchetypeCard(runnerUpKey, false);
+            runnerUpHTML += createAccordion(`ทำไมถึงถูกมองแบบนี้?`, [archetypes[runnerUpKey].why]);
+            runnerUpHTML += createAccordion(`จะรับมือยังไง (Accusation Audit)`, archetypes[runnerUpKey].audit);
+            runnerUpHTML += createAccordion(`คู่มือปรับตัว (Micro-Playbook)`, archetypes[runnerUpKey].playbook);
+            runnerUpArchetypeContainer.innerHTML = runnerUpHTML;
+            
+            // Setup accordions
+            setupAccordions();
+            
+            // Create Chart
+            const maxScore = 9; // 3*2 + 3*1
+            const topPercentage = Math.round((topScore / maxScore) * 100);
+            const runnerUpPercentage = Math.round((runnerUpScore / maxScore) * 100);
+            renderAwarenessChart(topKey, runnerUpKey, topPercentage, runnerUpPercentage);
+        }
 
+        function setupAccordions() {
+            const accordionItems = document.querySelectorAll('.accordion-item');
+            accordionItems.forEach(item => {
+                const header = item.querySelector('.accordion-header');
+                const content = item.querySelector('.accordion-content');
+                header.addEventListener('click', () => {
+                    const isActive = item.classList.contains('active');
+                    // This allows opening multiple accordions at once, which is better for this layout
+                    if (isActive) {
+                        item.classList.remove('active');
+                        content.style.maxHeight = null;
+                    } else {
+                        item.classList.add('active');
+                        content.style.maxHeight = content.scrollHeight + "px";
+                    }
+                });
+            });
+        }
+        
+        function renderAwarenessChart(topKey, runnerUpKey, topPercentage, runnerUpPercentage) {
+            const ctx = document.getElementById('awarenessChart').getContext('2d');
+            if(awarenessChartInstance) {
+                awarenessChartInstance.destroy();
+            }
+            awarenessChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: [archetypes[topKey].name, archetypes[runnerUpKey].name],
+                    datasets: [{
+                        label: 'ดัชนีการตระหนักรู้',
+                        data: [topPercentage, runnerUpPercentage],
+                        backgroundColor: [ 'rgba(212, 175, 55, 0.7)', 'rgba(212, 175, 55, 0.4)'],
+                        borderColor: [ 'rgba(212, 175, 55, 1)', 'rgba(212, 175, 55, 0.7)'],
+                        borderWidth: 1,
+                        borderRadius: 5
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: { label: (context) => `${context.raw}%` }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true, max: 100,
+                            ticks: { color: 'rgba(234, 234, 234, 0.7)', callback: (value) => value + '%' },
+                            grid: { color: 'rgba(234, 234, 234, 0.1)' }
+                        },
+                        y: {
+                            ticks: { color: 'rgba(234, 234, 234, 0.9)', font: { size: 14 } },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function resetTest() {
+            resultsSection.classList.add('hidden');
+            quizSection.classList.add('hidden');
+            introSection.classList.remove('hidden');
+            window.scrollTo(0, 0);
+        }
 
-           question.answers.forEach((answer) => {
-               const button = document.createElement('button');
-               button.className = 'answer-option';
-               button.textContent = answer.text;
-               button.dataset.answer = JSON.stringify(answer);
-              
-               const currentSelection = userAnswers[currentQuestionIndex];
-               if (currentSelection && currentSelection.text === answer.text) {
-                   button.classList.add('selected');
-               }
-               answersContainer.appendChild(button);
-           });
+        function createMysteriousParticles() {
+            const bg = document.getElementById('bgMystery');
+            if (!bg || bg.children.length > 0) return;
+            const count = window.innerWidth < 768 ? 15 : 30;
+            for (let i = 0; i < count; i++) {
+                const p = document.createElement('div');
+                p.className = 'mysterious-particle';
+                p.style.left = `${Math.random() * 100}%`;
+                p.style.top = `${Math.random() * 100}%`;
+                const size = Math.random() * 5 + 2;
+                p.style.width = `${size}px`;
+                p.style.height = `${size}px`;
+                p.style.animationDelay = `${Math.random() * 15}s`;
+                p.style.animationDuration = `${Math.random() * 10 + 15}s`;
+                bg.appendChild(p);
+            }
+        }
+        
+        // --- INITIALIZE APP ---
+        function initializeApp() {
+            createMysteriousParticles();
+            startTestBtn.addEventListener('click', startTest);
+            prevBtn.addEventListener('click', previousQuestion);
+            nextBtn.addEventListener('click', handleNextButtonClick);
+            answersContainer.addEventListener('click', selectAnswer);
+            document.querySelector('#retakeBtn button').addEventListener('click', resetTest);
+        }
 
+        initializeApp();
 
-           updateNavigation();
-           updateProgressBar();
-       }
-
-
-       function selectAnswer(e) {
-           if (e.target.classList.contains('answer-option')) {
-               const selectedAnswer = JSON.parse(e.target.dataset.answer);
-               userAnswers[currentQuestionIndex] = selectedAnswer;
-              
-               const options = answersContainer.querySelectorAll('.answer-option');
-               options.forEach(opt => opt.classList.remove('selected'));
-               e.target.classList.add('selected');
-              
-               nextBtn.disabled = false;
-              
-               setTimeout(() => {
-                   if (currentQuestionIndex < questions.length - 1) {
-                       currentQuestionIndex++;
-                       renderQuestion();
-                   } else {
-                       calculateAndShowResults();
-                   }
-               }, 300);
-           }
-       }
-
-
-       function updateNavigation() {
-           prevBtn.style.visibility = currentQuestionIndex > 0 ? 'visible' : 'hidden';
-           nextBtn.disabled = userAnswers[currentQuestionIndex] === null;
-           if (currentQuestionIndex === questions.length - 1) {
-               nextBtn.textContent = 'ดูผลลัพธ์';
-           } else {
-               nextBtn.textContent = 'ต่อไป';
-           }
-       }
-      
-       function updateProgressBar() {
-           const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
-           progressFill.style.width = `${progress}%`;
-           progressText.textContent = `ข้อที่ ${currentQuestionIndex + 1} จาก ${questions.length}`;
-       }
-
-
-       function handleNextButtonClick() {
-           if (currentQuestionIndex < questions.length - 1) {
-               currentQuestionIndex++;
-               renderQuestion();
-           } else {
-               calculateAndShowResults();
-           }
-       }
-
-
-       function previousQuestion() {
-           if (currentQuestionIndex > 0) {
-               currentQuestionIndex--;
-               renderQuestion();
-           }
-       }
-      
-       function calculateAndShowResults() {
-           const scores = {};
-           const strongCounts = {};
-           const firstStrongIndex = {};
-
-
-           Object.keys(archetypes).forEach(key => {
-               scores[key] = 0;
-               strongCounts[key] = 0;
-               firstStrongIndex[key] = Infinity;
-           });
-          
-           userAnswers.forEach((answer, index) => {
-               if(answer !== null) {
-                   scores[answer.type] += answer.weight;
-                   if (answer.weight === 2) {
-                       strongCounts[answer.type]++;
-                       if (index < firstStrongIndex[answer.type]) {
-                           firstStrongIndex[answer.type] = index;
-                       }
-                   }
-               }
-           });
-
-
-           const sortedScores = Object.keys(scores).sort((a, b) => {
-               // 1. Higher score wins
-               if (scores[b] !== scores[a]) {
-                   return scores[b] - scores[a];
-               }
-               // 2. Tie-break: More strong (w=2) answers win
-               if (strongCounts[b] !== strongCounts[a]) {
-                   return strongCounts[b] - strongCounts[a];
-               }
-               // 3. Tie-break: Earlier first strong answer wins
-               return firstStrongIndex[a] - firstStrongIndex[b];
-           });
-          
-           const topArchetypeKey = sortedScores[0];
-           const runnerUpArchetypeKey = sortedScores[1];
-           const topScore = scores[topArchetypeKey];
-           const runnerUpScore = scores[runnerUpArchetypeKey];
-          
-           displayResults(topArchetypeKey, runnerUpArchetypeKey, topScore, runnerUpScore);
-       }
-
-
-       function createArchetypeCard(key, isTop) {
-           const archetype = archetypes[key];
-           const chipsHTML = archetype.chips.map(chip => `<span class="chip">${chip}</span>`).join('');
-           return `
-               <div class="archetype-card ${isTop ? 'top-archetype' : ''}">
-                   <div class="archetype-title">
-                       <span class="archetype-icon">${archetype.icon}</span>
-                       <h3 class="archetype-name">${archetype.name} – “${archetype.tagline}”</h3>
-                   </div>
-                   <p class="archetype-desc">${archetype.desc}</p>
-                   ${isTop ? `<div class="archetype-chips">${chipsHTML}</div>` : ''}
-                   <p class="trigger-text">${archetype.trigger}</p>
-               </div>
-           `;
-       }
-
-
-       function createAccordion(title, contentItems) {
-           const contentHTML = `<ul>${contentItems.map(item => `<li>${item}</li>`).join('')}</ul>`;
-           return `
-               <div class="accordion-item">
-                   <button class="accordion-header">${title}</button>
-                   <div class="accordion-content">
-                       <div class="accordion-content-inner">${contentHTML}</div>
-                   </div>
-               </div>
-           `;
-       }
-
-
-       function displayResults(topKey, runnerUpKey, topScore, runnerUpScore) {
-           quizSection.classList.add('hidden');
-           resultsSection.classList.remove('hidden');
-           window.scrollTo(0, 0);
-
-
-           const topArchetypeContainer = document.getElementById('top-archetype-full-container');
-           const runnerUpArchetypeContainer = document.getElementById('runner-up-archetype-full-container');
-
-
-           // --- Populate Top Archetype Section ---
-           let topHTML = createArchetypeCard(topKey, true);
-           topHTML += createAccordion(`ทำไมถึงถูกมองแบบนี้?`, [archetypes[topKey].why]);
-           topHTML += createAccordion(`จะรับมือยังไง (Accusation Audit)`, archetypes[topKey].audit);
-           topHTML += createAccordion(`คู่มือปรับตัว (Micro-Playbook)`, archetypes[topKey].playbook);
-           topArchetypeContainer.innerHTML = topHTML;
-          
-           // --- Populate Runner-up Archetype Section ---
-           let runnerUpHTML = createArchetypeCard(runnerUpKey, false);
-           runnerUpHTML += createAccordion(`ทำไมถึงถูกมองแบบนี้?`, [archetypes[runnerUpKey].why]);
-           runnerUpHTML += createAccordion(`จะรับมือยังไง (Accusation Audit)`, archetypes[runnerUpKey].audit);
-           runnerUpHTML += createAccordion(`คู่มือปรับตัว (Micro-Playbook)`, archetypes[runnerUpKey].playbook);
-           runnerUpArchetypeContainer.innerHTML = runnerUpHTML;
-          
-           // Setup accordions
-           setupAccordions();
-          
-           // Create Chart
-           const maxScore = 9; // 3*2 + 3*1
-           const topPercentage = Math.round((topScore / maxScore) * 100);
-           const runnerUpPercentage = Math.round((runnerUpScore / maxScore) * 100);
-           renderAwarenessChart(topKey, runnerUpKey, topPercentage, runnerUpPercentage);
-       }
-
-
-       function setupAccordions() {
-           const accordionItems = document.querySelectorAll('.accordion-item');
-           accordionItems.forEach(item => {
-               const header = item.querySelector('.accordion-header');
-               const content = item.querySelector('.accordion-content');
-               header.addEventListener('click', () => {
-                   const isActive = item.classList.contains('active');
-                   // This allows opening multiple accordions at once, which is better for this layout
-                   if (isActive) {
-                       item.classList.remove('active');
-                       content.style.maxHeight = null;
-                   } else {
-                       item.classList.add('active');
-                       content.style.maxHeight = content.scrollHeight + "px";
-                   }
-               });
-           });
-       }
-      
-       function renderAwarenessChart(topKey, runnerUpKey, topPercentage, runnerUpPercentage) {
-           const ctx = document.getElementById('awarenessChart').getContext('2d');
-           if(awarenessChartInstance) {
-               awarenessChartInstance.destroy();
-           }
-           awarenessChartInstance = new Chart(ctx, {
-               type: 'bar',
-               data: {
-                   labels: [archetypes[topKey].name, archetypes[runnerUpKey].name],
-                   datasets: [{
-                       label: 'ดัชนีการตระหนักรู้',
-                       data: [topPercentage, runnerUpPercentage],
-                       backgroundColor: [ 'rgba(212, 175, 55, 0.7)', 'rgba(212, 175, 55, 0.4)'],
-                       borderColor: [ 'rgba(212, 175, 55, 1)', 'rgba(212, 175, 55, 0.7)'],
-                       borderWidth: 1,
-                       borderRadius: 5
-                   }]
-               },
-               options: {
-                   indexAxis: 'y',
-                   responsive: true,
-                   maintainAspectRatio: false,
-                   plugins: {
-                       legend: { display: false },
-                       tooltip: {
-                           callbacks: { label: (context) => `${context.raw}%` }
-                       }
-                   },
-                   scales: {
-                       x: {
-                           beginAtZero: true, max: 100,
-                           ticks: { color: 'rgba(234, 234, 234, 0.7)', callback: (value) => value + '%' },
-                           grid: { color: 'rgba(234, 234, 234, 0.1)' }
-                       },
-                       y: {
-                           ticks: { color: 'rgba(234, 234, 234, 0.9)', font: { size: 14 } },
-                           grid: { display: false }
-                       }
-                   }
-               }
-           });
-       }
-      
-       function resetTest() {
-           resultsSection.classList.add('hidden');
-           quizSection.classList.add('hidden');
-           introSection.classList.remove('hidden');
-           window.scrollTo(0, 0);
-       }
-
-
-       function createMysteriousParticles() {
-           const bg = document.getElementById('bgMystery');
-           if (!bg || bg.children.length > 0) return;
-           const count = window.innerWidth < 768 ? 15 : 30;
-           for (let i = 0; i < count; i++) {
-               const p = document.createElement('div');
-               p.className = 'mysterious-particle';
-               p.style.left = `${Math.random() * 100}%`;
-               p.style.top = `${Math.random() * 100}%`;
-               const size = Math.random() * 5 + 2;
-               p.style.width = `${size}px`;
-               p.style.height = `${size}px`;
-               p.style.animationDelay = `${Math.random() * 15}s`;
-               p.style.animationDuration = `${Math.random() * 10 + 15}s`;
-               bg.appendChild(p);
-           }
-       }
-      
-       // --- INITIALIZE APP ---
-       function initializeApp() {
-           createMysteriousParticles();
-           startTestBtn.addEventListener('click', startTest);
-           prevBtn.addEventListener('click', previousQuestion);
-           nextBtn.addEventListener('click', handleNextButtonClick);
-           answersContainer.addEventListener('click', selectAnswer);
-           document.querySelector('#retakeBtn button').addEventListener('click', resetTest);
-       }
-
-
-       initializeApp();
-
-
-   });
-   </script>
+    });
+    </script>
 </body>
 </html>
+
+
+
+
+
